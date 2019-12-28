@@ -1,0 +1,89 @@
+{
+  "_from": "github:lpreterite/vue-tinymce",
+  "_id": "@packy-tang/vue-tinymce@0.2.1",
+  "_inBundle": false,
+  "_integrity": "",
+  "_location": "/@packy-tang/vue-tinymce",
+  "_phantomChildren": {},
+  "_requested": {
+    "type": "git",
+    "raw": "@packy-tang/vue-tinymce@github:lpreterite/vue-tinymce",
+    "name": "@packy-tang/vue-tinymce",
+    "escapedName": "@packy-tang%2fvue-tinymce",
+    "scope": "@packy-tang",
+    "rawSpec": "github:lpreterite/vue-tinymce",
+    "saveSpec": "github:lpreterite/vue-tinymce",
+    "fetchSpec": null,
+    "gitCommittish": null
+  },
+  "_requiredBy": [
+    "#USER",
+    "/"
+  ],
+  "_resolved": "github:lpreterite/vue-tinymce#275388beaeb8fe044f3a8123a98d2b45f2b879ba",
+  "_spec": "@packy-tang/vue-tinymce@github:lpreterite/vue-tinymce",
+  "_where": "D:\\WorkSpace\\OA",
+  "author": {
+    "name": "packy-tang",
+    "email": "lpreterite@126.com"
+  },
+  "browser": "dist/vue-tinymce.umd.js",
+  "bugs": {
+    "url": "https://github.com/lpreterite/vue-tinymce/issues"
+  },
+  "bundleDependencies": false,
+  "dependencies": {
+    "tinymce": "^5.0.3"
+  },
+  "deprecated": false,
+  "description": "A simple vue-based tinymce component",
+  "devDependencies": {
+    "@vue/test-utils": "^1.0.0-beta.29",
+    "chai": "^4.2.0",
+    "cross-env": "^5.2.0",
+    "docsify": "^4.9.1",
+    "jsdom": "~14.0.0",
+    "jsdom-global": "~3.0.2",
+    "mocha": "^6.1.1",
+    "nyc": "^13.3.0",
+    "reify": "^0.18.1",
+    "rollup": "~1.9.0",
+    "rollup-plugin-commonjs": "^9.3.4",
+    "rollup-plugin-css-only": "^1.0.0",
+    "rollup-plugin-node-resolve": "^4.2.3",
+    "rollup-plugin-terser": "^4.0.4",
+    "rollup-plugin-vue": "^4.7.2",
+    "rollup-watch": "^4.3.1",
+    "vue": "~2.6.10",
+    "vue-template-compiler": "~2.6.10",
+    "vuep": "^0.8.1"
+  },
+  "files": [
+    "dist",
+    "src"
+  ],
+  "homepage": "https://github.com/lpreterite/vue-tinymce#readme",
+  "jsnext:main": "dist/vue-tinymce.esm.js",
+  "keywords": [
+    "tinymce",
+    "vue",
+    "textarea"
+  ],
+  "license": "MIT",
+  "main": "dist/vue-tinymce.cjs.js",
+  "module": "dist/vue-tinymce.esm.js",
+  "name": "@packy-tang/vue-tinymce",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/lpreterite/vue-tinymce.git"
+  },
+  "scripts": {
+    "build": "cross-env BUILD=production rollup -c",
+    "doc": "docsify serve docs",
+    "prepublish": "cross-env BUILD=production npm test",
+    "pretest": "rollup -c",
+    "test": "nyc mocha",
+    "watch": "rollup -c -w"
+  },
+  "version": "0.2.1"
+}

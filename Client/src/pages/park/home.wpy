@@ -1,0 +1,144 @@
+<!-- 长泰停车 首页 2018-04-23 -->
+<style lang="less">
+@import '../../styles/global';
+.home {
+  swiper, image {
+    .height(200);
+  }
+  image {
+    .width(640);
+  }
+  >.flexs {
+    margin-bottom: 10rpx;
+    >view {
+      width: 50%;
+      &:nth-child(2n + 1) {
+        padding: 0 10rpx 20rpx 20rpx;
+      }
+      &:nth-child(2n) {
+        padding: 0 20rpx 20rpx 10rpx;
+      }
+      &:last-child {
+        width: 100%;
+        padding: 0 20rpx 20rpx;
+      }
+      .flex-c-m {
+        .height(100);
+        .radius;
+        .shadow(0rpx, 0rpx, 20rpx, rgba(0, 0, 0, .15));
+      }
+      text {
+        .font-size(50);
+        margin-right: 30rpx;
+      }
+    }
+  }
+  .explanation {
+    margin: 0 25rpx 25rpx;
+    padding: 20rpx;
+    border: 3rpx dashed #fe4e4e;
+    .radius;
+  }
+}
+.mid{
+  display:flex;
+  justify-content:center;
+  align-items: center;
+}
+</style>
+
+<template>
+  <view class="container home">
+    <swiper indicator-dots="{{banner.indicatorDots}}"
+    autoplay="{{banner.autoplay}}" circular="{{banner.circular}}" interval="{{banner.interval}}" duration="{{banner.duration}}">
+      <block wx:for="{{banner.list}}" wx:for-index="idx" wx:key="idx">
+        <swiper-item>
+          <image src="{{item}}" class="slide-image"/>
+        </swiper-item>
+      </block>
+    </swiper>
+    <parkno :history.sync="historyData"></parkno>
+    <view class="flexs flex-wrap">
+      <view><navigator url="/pages/park/integral" class="flex-c-m col-c mid">我的钱包</navigator></view>
+      <view><navigator url="/pages/park/bill/bill" class="flex-c-m col-o mid">历史账单</navigator></view>
+    </view>
+    <view class="explanation">
+      <view><text class="font-24 col-3">缴费说明：</text></view>
+      <view><text class="font-20">**停车费调整至16元/小时;</text></view>
+      <view><text class="font-20">**会员银卡1250积分/小时;</text></view>
+      <view><text class="font-20">**新会员免费赠送2500积分;</text></view>
+    </view>
+  </view>
+</template>
+
+<script>
+import wepy from 'wepy'
+import ParkNo from '@/components/park/parkNo'
+import auth from '@/api/auth'
+import licensePlate from '@/api/licensePlate'
+import coupon from '@/api/coupon'
+export default class home extends wepy.page {
+  config = {
+    navigationBarTitleText: '停车缴费'
+  }
+  data = {
+    banner: {
+      indicatorDots: false,
+      autoplay: true,
+      circular: true,
+      interval: 5000,
+      duration: 1000,
+      list: ['../../images/img-01.png', '../../images/img-02.png']
+    },
+    historyData: []
+  }
+  components = {
+    parkno: ParkNo
+  }
+  methods = {
+    getLocation () {
+      wepy.getLocation({
+        type: 'gcj02', // 返回可以用于wx.openLocation的经纬度
+        success: function(res) {
+          var latitude = res.latitude
+          var longitude = res.longitude
+          wepy.openLocation({
+            latitude: latitude,
+            longitude: longitude,
+            scale: 28
+          })
+        }
+      })
+    },
+    scanCode () {
+      wepy.scanCode({
+        success: (res) => {
+          let param = {
+            coupon_str: res.result
+          }
+          coupon.drawCoupon(param)
+            .then(res => {
+              return wepy.showToast({
+                title: '领取成功',
+                icon: 'none',
+                duration: 2000
+              })
+            })
+            .catch(err => {
+              wepy.showToast({
+                title: err.message,
+                icon: 'none',
+                duration: 2000
+              })
+            })
+        }
+      })
+    }
+  }
+  async onLoad () {
+    let history = await licensePlate.historyCars()
+    this.historyData = history.list
+    this.$apply()
+  }
+}
+</script>

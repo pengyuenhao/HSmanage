@@ -1,0 +1,148 @@
+<template>
+  <view class="container">
+    <view class="pos">
+      <view class="search_read_only">
+        <navigator
+          class="search_content"
+          open-type="navigate"
+          url="/pages/map_search"
+        >
+          <i class="iconfont icon-search"></i>
+          <view class="search_input">搜索</view>
+        </navigator>
+      </view>
+    </view>
+    <map
+      id="myMap"
+      style="width: 100%; height: 100vh;"
+      longitude="{{longitude}}"
+      latitude="{{latitude}}"
+      scale='16'
+      subkey="GM4BZ-4XICJ-GJGFS-K3H45-Q5XC7-MBF2C"
+      polyline="{{polyline}}"
+      markers="{{markers}}"
+    ></map>
+  </view>
+</template>
+<script>
+import wepy from "wepy";
+import api from "@/api/api";
+import QQMapWX from "../plugins/qqmap-wx-jssdk.min.js";
+import { REGION_INFO,LOCATION_INFO } from "@/utils/constant";
+
+const TX_SK = "Q35ZJUEMNoqVnMySx9doU0ziNWx3I";
+const TX_KEY = "GM4BZ-4XICJ-GJGFS-K3H45-Q5XC7-MBF2C";
+export default class MapServer extends wepy.page {
+  config = {
+    navigationBarTitleText: "空白页面"
+  };
+  components = {};
+  data = {
+    qqmapsdk: new QQMapWX({
+      key: TX_KEY
+    }),
+    longitude: 116.313972,
+    latitude: 39.980014,
+    markers: [],
+    polyline: null
+  };
+  onLoad() {
+    console.log("[空白页面]", this.qqmapsdk);
+  }
+  onShow() {
+    let that = this;
+    wx.getLocation({
+      typs: "wgs84",
+      isHighAccuracy: true,
+      highAccuracyExpireTime: 5000,
+      success: res => {
+        let latitude = res.latitude;
+        let longitude = res.longitude;
+        console.log("[位置]", res);
+        wepy.setStorageSync(LOCATION_INFO, res);
+        that.latitude = latitude;
+        that.longitude = longitude;
+        that.markers = [
+          {
+            id: 0,
+            //iconPath: "../images/selected.png",
+            latitude: latitude,
+            longitude: longitude,
+            width: 25,
+            height: 25
+          }
+        ];
+        that.qqmapsdk.reverseGeocoder({
+          location: `${res.latitude},${res.longitude}`,
+          sig: TX_SK,
+          success: res => {
+            console.log("[地址解析]", res.result);
+            wepy.setStorageSync(REGION_INFO, res.result);
+          },
+          fail: res => {}
+        });
+        that.$apply();
+      },
+      onReady: function() {}
+    });
+    return;
+    this.qqmapsdk.getCityList({
+      sig: TX_SK,
+      success: res => {
+        console.log(res);
+        console.log("省份数据：", res.result[0]); //打印省份数据
+        console.log("城市数据：", res.result[1]); //打印城市数据
+        console.log("区县数据：", res.result[2]); //打印区县数据
+      },
+      fail: function(error) {
+        console.error(error);
+      },
+      complete: function(res) {
+        console.log(res);
+      }
+    });
+  }
+  computed = {};
+  methods = {};
+}
+</script>
+<style lang="less">
+@import "../styles/global";
+@import "../styles/common";
+
+.pos {
+  position: absolute;
+  //top: 0rpx;
+  z-index: 1000;
+  //position: sticky;
+  top: 25rpx;
+  left: 50rpx;
+  right: 50rpx;
+  //margin-left: 100rpx;
+  background: #ffffff;
+  border-radius: 50rpx;
+  .search_read_only {
+    height: 75rpx;
+    //width: 100%;
+    //border: rgb(233, 233, 233) solid 3rpx;
+    padding: 5rpx;
+    display: flex;
+    justify-items: flex-start;
+    .search_content {
+      width: 100%;
+      height: 70rpx;
+      margin-left: 0rpx;
+      background: rgba(206, 205, 205, 0.5);
+      border: 1px solid #efefee;
+      .icon-search {
+        scale: 1.25 1.25;
+        padding: 5rpx;
+      }
+      .search_input {
+        font-size: 125%;
+        color: #666;
+      }
+    }
+  }
+}
+</style>

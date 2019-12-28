@@ -1,0 +1,242 @@
+<template>
+  <view class="info">
+    <view class="header">
+      <view class="header_content">
+        <navigator
+          wx:if="{{bShowBind}}"
+          class="info_authorize"
+          url="/pages/register"
+        >
+          <image
+            class="avatarUrl"
+            src="../images/icon_my_01.png"
+          >
+            <view class="nickName cfff">登录</view>
+        </navigator>
+        <view wx:elif="{{!bShowBind}}">
+          <image
+            class="avatarUrl"
+            src="{{avatarUrl}}"
+          >
+            <view class="nickName cfff">{{nickName}}</view>
+        </view>
+      </view>
+    </view>
+    <view class="info_block">
+      <!--navigator class="item" url="/pages/register" wx:if="{{bShowBind}}">
+        <view>
+          <view class="item_content">
+            <image class="item_img" src="../images/icon_my_01.png">
+            <view class="text" style="color:#fe2a2a">绑定手机号</view>
+          </view>
+          <view class="tip">绑定手机号可更好的让我们服务好您！</view>
+        </view>
+        <view class="arrow">&gt;</view>
+      </navigator-->
+      <navigator
+        class="item"
+        url="/pages/points"
+      >
+        <view class="item_content">
+          <image
+            class="item_img"
+            src="../images/icon_my_03.png"
+          >
+            <view class="text">我的积分</view>
+        </view>
+        <view class="arrow">&gt;</view>
+      </navigator>
+      <navigator
+        class="item"
+        url="/pages/collection?type=0"
+      >
+        <view class="item_content">
+          <image
+            class="item_img"
+            src="../images/icon_my_04.png"
+          >
+            <view class="text">我的足迹</view>
+        </view>
+        <view class="arrow">&gt;</view>
+      </navigator>
+      <navigator
+        class="item"
+        url="/pages/collection?type=1"
+      >
+        <view class="item_content">
+          <image
+            class="item_img"
+            src="../images/icon_my_05.png"
+          >
+            <view class="text">我的收藏</view>
+        </view>
+        <view class="arrow">&gt;</view>
+      </navigator>
+    </view>
+    <view class="info_block">
+      <navigator
+        class="item"
+        url="/pages/messages"
+      >
+        <view class="item_content">
+          <image
+            class="item_img"
+            src="../images/icon_my_06.png"
+          >
+            <view class="text">我的消息</view>
+        </view>
+        <view class="arrow">&gt;</view>
+      </navigator>
+      <navigator
+        class="item"
+        url="/pages/setting"
+      >
+        <view class="item_content">
+          <image
+            class="item_img"
+            src="../images/icon_my_07.png"
+          >
+            <view class="text">设置</view>
+        </view>
+        <view class="arrow">&gt;</view>
+      </navigator>
+    </view>
+  </view>
+</template>
+<script>
+import wepy from "wepy";
+import api from "@/api/api";
+import tip from "@/utils/tip";
+import { USER_INFO, USER_SPECICAL_INFO, USER_TOKEN } from "@/utils/constant";
+export default class Index extends wepy.page {
+  config = {
+    navigationBarTitleText: "我"
+  };
+  components = {};
+
+  data = {
+    token: null,
+    avatarUrl: "",
+    nickName: "",
+    bShowBind: true
+  };
+  async getUserInfo(phone, code) {
+    let that = this;
+    let userSpecialInfo = wepy.getStorageSync(USER_SPECICAL_INFO) || {};
+    let openId = userSpecialInfo.openid;
+    const json = await api
+      .getUserInfo({
+        query: {
+          openId: openId
+        }
+      })
+      .catch(err => console.error(err));
+
+    if (json && json.data.code == 0) {
+      if (json.data.user.mobile.length > 0) {
+        this.bShowBind = false;
+      } else {
+        this.bShowBind = true;
+      }
+      that.$apply();
+    } else {
+      tip.error("网络通信异常");
+    }
+    //that.bShowBind = false;
+    that.showLoading = false;
+  }
+
+  onLoad() {
+    let that = this;
+    console.log("[信息面板]");
+  }
+  onShow() {
+    let that = this;
+    this.token = wepy.getStorageSync(USER_TOKEN);
+    console.log("[本地用户Token]" + this.token);
+    if (!this.token) {
+      this.bShowBind = true;
+    } else {
+      this.bShowBind = false;
+      let userInfo = wepy.getStorageSync(USER_INFO);
+      that.avatarUrl = userInfo.avatarUrl;
+      that.nickName = userInfo.nickName;
+    }
+    //this.$apply();
+  }
+  computed = {};
+  methods = {};
+  events = {};
+}
+</script>
+<style lang="less">
+.header {
+  background: #ff6a3c;
+  height: 260rpx;
+  width: 100%;
+}
+
+.header_content {
+  width: 100%;
+  margin: 0 auto;
+  text-align: center;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding-top: 24rpx;
+}
+.info_authorize {
+  width: 280rpx;
+  border-radius: 200rpx;
+  background: #73a9c2;
+}
+
+.avatarUrl {
+  margin-top: 6rpx;
+  width: 122rpx;
+  height: 122rpx;
+  border-radius: 1000px;
+}
+
+.nickName {
+  font-size: 36rpx;
+  padding-top: 15rpx;
+}
+
+.info_block {
+  margin-top: 10rpx;
+  .item {
+    border-top: 1rpx solid #dbdbdb;
+    background: #fff;
+    padding: 34rpx 28rpx;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .item:last-child {
+    border-bottom: 1rpx solid #dbdbdb;
+  }
+  .item_content {
+    display: flex;
+    align-items: center;
+    .text {
+      margin-left: 20rpx;
+      color: #1a1a1a;
+    }
+  }
+  .item_img {
+    width: 42rpx;
+    height: 42rpx;
+  }
+  .arrow {
+    color: #cccccc;
+    font-size: 32rpx;
+  }
+  .tip {
+    color: #999;
+    font-size: 24rpx;
+    margin-top: 20rpx;
+    margin-left: 60rpx;
+  }
+}
+</style>

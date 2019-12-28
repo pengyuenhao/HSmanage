@@ -1,0 +1,155 @@
+<template>
+  <view class="container">
+    <view class="header">
+    </view>
+    <!--发现好商品模块-->
+    <discover :list.sync="discoverList"></discover>
+    <!--加载更多时动画-->
+    <bottomLoadMore :show.sync="showLoading" message="正在加载"></bottomLoadMore>
+    <!--暂无数据显示-->
+    <placeholder :show.sync="is_empty" message="暂无发现数据"></placeholder>
+    <!--弹屏  types:0 图片  1：领红包   show 是否显示  @close 关闭回调  @callback 点击图片回调 或确定回调-->
+    <parkscreen :types.sync="tps" :show.sync="is_show_alert" @close.user="closeAlert" @callback.user="alertCallback"></bombscreen>
+  </view>
+</template>
+<script>
+import wepy from 'wepy';
+import api from '@/api/api';
+import tip from '@/utils/tip'
+import Discover from '@/components/discover'
+import Parkscreen from '@/components/park_screen'
+import BottomLoadMore from "../components/common/bottomLoadMore"
+import Placeholder from "../components/common/placeholder"
+export default class Park extends wepy.page {
+  config = {
+    navigationBarTitleText: '停车缴费',
+  }
+  components = {
+    discover: Discover,
+    bottomLoadMore: BottomLoadMore,
+    placeholder: Placeholder,
+    parkscreen: Parkscreen
+  }
+  data = {
+    indicatorDots: true,
+    autoplay: true,
+    interval: 3000,
+    duration: 1000,
+    indicatorActiveColor: "#fff",
+    discoverList: [],
+    //是否有数据
+    is_empty: false,
+    //当前页面
+    currentPage: 1,
+    //总页数
+    page_total: 0,
+    //是否显示 底部loading
+    showLoading: false,
+    //防止重复加载
+    preventRepeatReuqest: false,
+    //广告列表
+    adList: [],
+    tps: 1,
+    is_show_alert: true
+  }
+  //获取数据列表
+  async getDiscoverList(currentPage, size) {
+    let that = this;
+    const json = await api.getHomeDisvocerList({
+      query: {
+        page: currentPage || 1,
+        size: size || 10
+      }
+    });
+    if (json.data.code == 0) {
+      that.discoverList = [...that.discoverList, ...json.data.list];
+
+      if (json.data.page_total) { // 后台的数据不再返回page_total
+      that.page_total = json.data.page_total
+      };
+      if (json.data.page_total == 0) {
+        //暂无数据
+        that.is_empty = true;
+      }
+      that.$apply();
+    } else {
+      tip.error(json.data.msg);
+    }
+    that.showLoading = false;
+  }
+  async getAdList() {
+    const json = await api.getAdList({
+      query: {}
+    });
+    if (json.data.code == 0) {
+      this.adList = json.data.list;
+      this.$apply();
+    } else {}
+  }
+  onLoad() {
+    console.log("[停车场]");
+
+    //this.discoverList = [];
+    //this.getDiscoverList();
+    //this.getAdList();
+  }
+  computed = {}
+  methods = {
+    goToAdvert(url) {
+      console.log("url===" + url);
+      if (url.length == 0) {
+        return;
+      }
+      wepy.navigateTo({
+        url: url
+      })
+    },
+    onShareAppMessage: function(res) {
+      if (res.from === 'button') {
+        // 来自页面内转发按钮
+        console.log(res.target)
+      }
+      return {
+        title: '素洁服装厂',
+        path: '/pages/home',
+        success: function(res) {
+          // 转发成功
+        },
+        fail: function(res) {
+          // 转发失败
+        }
+      }
+    },
+    alertCallback() {
+      tip.alert('跳转');
+    },
+    closeAlert() {
+     // tip.alert('关闭');
+    }
+  }
+  events = {}
+  //加载更多
+  onReachBottom() {
+    let that = this;
+    that.showLoading = true;
+    console.log(that.page_total + "===" + that.currentPage);
+    //判断总页数是否大于翻页数
+    if ((that.page_total) > that.currentPage) {
+      //防止重复加载
+      if (that.preventRepeatReuqest) {
+        return true;
+      }
+      that.preventRepeatReuqest = true;
+      that.currentPage++;
+      that.getDiscoverList(that.currentPage);
+      that.preventRepeatReuqest = false;
+    } else {
+      that.showLoading = false;
+    }
+  };
+}
+
+</script>
+<style lang="less">
+
+</style>

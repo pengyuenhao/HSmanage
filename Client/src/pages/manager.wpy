@@ -1,0 +1,157 @@
+<template>
+  <view class="container">
+    <scroll-view
+      scroll-y="true"
+      class="swiper-item-box"
+      style="height:{{winHeight - 31}}px"
+      bindscrolltolower="onReachBottom"
+    >
+      <roomItem :orderList.sync="orderList" :infoList.sync="infoList"></roomItem>
+      <!--加载更多时动画-->
+      <bottomLoadMore :show.sync="showLoading" message="正在加载"></bottomLoadMore>
+      <!--跳转到添加页面-->
+      <navigator class="item" url="/pages/enroll">
+        <view class="item_content">
+          <image class="item_img" src="../images/icon_home.png">
+          <view class="text">添加房屋信息</view>
+        </view>
+        <view class="arrow">&gt;</view>
+      </navigator>
+      <!--暂无数据显示-->
+      <placeholder :show.sync="is_empty" message="暂无发现数据"></placeholder>
+    </scroll-view>
+  </view>
+</template>
+<script>
+import wepy from "wepy";
+import api from "@/api/api";
+import RoomItem from "@/components/room_item";
+import BottomLoadMore from "../components/common/bottomLoadMore";
+import Placeholder from "../components/common/placeholder";
+import { SYSTEM_INFO, USER_SPECICAL_INFO, USER_INFO } from "@/utils/constant";
+
+export default class Manager extends wepy.page {
+  config = {
+    navigationBarTitleText: "管理页面"
+  };
+  components = {
+    roomItem: RoomItem,
+    bottomLoadMore: BottomLoadMore,
+    placeholder: Placeholder
+  };
+  data = {
+    session: null,
+    user: null,
+    //是否显示 底部loading
+    showLoading: true,
+    is_empty: false,
+    orderList: [],
+    infoList:{},
+    list: []
+  };
+  onShow(){
+    this.user = wepy.getStorageSync(USER_INFO);
+    this.session = wepy.getStorageSync(USER_SPECICAL_INFO);
+    console.log("[显示管理页面]", this.user, this.session);
+    this.orderList = [];
+    this.showLoading = true;
+    //获取用户房间列表
+    api
+      .getHostRoomList({
+        query: this.session
+      })
+      .then(res => {
+        this.orderList = {
+          list:[]
+        };
+        let community = res.data.community;
+
+        this.showLoading = false;
+        if (community) {
+          this.infoList.community_info = {};
+          this.infoList.block_info = {};
+          this.infoList.room_info = {};
+          for(let i = 0;i< res.data.community_info.length;i++){
+            let info = res.data.community_info[i];
+            this.infoList.community_info[info.id] = res.data.community_info[i].name;
+          }
+          for(let i = 0;i< res.data.block_info.length;i++){
+            let info = res.data.block_info[i];
+            this.infoList.block_info[info.id] = res.data.block_info[i].name;
+          }
+          for(let i = 0;i< res.data.room_info.length;i++){
+            let info = res.data.room_info[i];
+            this.infoList.room_info[info.id] = {
+              floor:res.data.room_info[i].floor,
+              doorplate:res.data.room_info[i].doorplate
+            }
+          }
+          console.log("[社区信息]",this.infoList,this.showLoading);
+          //遍历数据构建列表
+          for(let community_key in community){
+            for(let block_key in community[community_key].block){
+              for(let room_key in community[community_key].block[block_key].room){
+                this.orderList.list.push({
+                  community_id:community_key,
+                  block_id:block_key,
+                  room_id:room_key,
+                  auditStatus:5
+                })
+                console.log("[社区]"+community_key + "[区块]"+block_key + "[房屋]"+room_key);
+              }
+            }
+          }
+          this.is_empty = false;
+        } else {
+          this.is_empty = true;
+        }
+        this.$apply();
+        console.log("[社区数据]", community);
+      })
+      .catch(err => {
+        console.error("[错误]", err);
+        this.showLoading = false;
+        this.is_empty = true;
+      });
+  }
+  onLoad() {
+    console.log("[管理页面]");
+  }
+  computed = {};
+  methods = {
+    addroom() {
+      console.log("[添加房屋信息]");
+    }
+  };
+}
+</script>
+<style lang="less">
+@import "../styles/global";
+@import "../styles/common";
+.item {
+  border-top: 1rpx solid #dbdbdb;
+  border-bottom: 1rpx solid #dbdbdb;
+  background: #fff;
+  padding: 34rpx 28rpx;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.item_content {
+  display: flex;
+  align-items: center;
+  .text {
+    font-size: 50rpx;
+    margin-left: 20rpx;
+    color: #1a1a1a;
+  }
+}
+.item_img {
+  width: 125rpx;
+  height: 125rpx;
+}
+.arrow {
+  color: #cccccc;
+  font-size: 132rpx;
+}
+</style>

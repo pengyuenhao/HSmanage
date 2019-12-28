@@ -1,0 +1,37 @@
+<template>
+  <view class="container">
+    <view class="shop_list">
+      <!--矩阵商品列表模块-->
+      <roomGridList :purchasetype.sync="purchasetype" :list.sync="list"></roomGridList>
+    </view>
+  </view>
+</template>
+<script>
+import wepy from "wepy";
+import api from "@/api/api";
+import RoomGridList from '@/components/room_grid_list'
+
+export default class Check extends wepy.page {
+  config = {
+    navigationBarTitleText: "检查信息"
+  };
+  components = {
+    roomGridList:RoomGridList
+  };
+  data = {
+    list:[],
+    purchasetype: 1,
+  };
+  onLoad(options) {
+    let json = JSON.parse(options.source);
+    console.log("[检查页面]", json);
+    this.list = json;
+  }
+  computed = {};
+  methods = {};
+}
+</script>
+<style lang="less">
+@import "../styles/global";
+@import "../styles/common";
+</style>

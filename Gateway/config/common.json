@@ -1,0 +1,8 @@
+{
+    "https":false,
+    "port":8000,
+    "redis":{
+        "port":6379,
+        "ip":"localhost"
+    }
+}

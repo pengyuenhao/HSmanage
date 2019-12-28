@@ -1,0 +1,24 @@
+<template>
+  <view class="container"></view>
+</template>
+<script>
+import wepy from "wepy";
+import api from "@/api/api";
+
+export default class Blank extends wepy.page {
+  config = {
+    navigationBarTitleText: "空白页面"
+  };
+  components = {};
+  data = {};
+  onLoad() {
+    console.log("[空白页面]");
+  }
+  computed = {};
+  methods = {};
+}
+</script>
+<style lang="less">
+@import "../styles/global";
+@import "../styles/common";
+</style>

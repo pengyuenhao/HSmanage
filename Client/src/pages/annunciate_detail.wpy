@@ -1,0 +1,137 @@
+<template>
+  <import src="../utils/wxParse/wxParse.wxml" />
+  <view class="content">
+    <view class="title">{{title}}</view>
+    <view class="doc">
+      <template
+        is="wxParse"
+        data="{{wxParseData:htmlParserTpl.nodes}}"
+      /></template>
+    </view>
+    <view class="floor">{{floor}}</view>
+  </view>
+</template>
+<script>
+import wepy from "wepy";
+import api from "@/api/api";
+import WxParse from "@/utils/wxParse/wxParse.js";
+import tip from "@/utils/tip";
+import {dateFtt} from "@/utils/format";
+
+export default class AnnunciateDetail extends wepy.page {
+  config = {
+    navigationBarTitleText: ""
+  };
+  data = {
+    htmlParserTpl: {},
+    parserName: "htmlParserName",
+    parserContent:
+      "<p style='font-size: 32rpx; padding: 30rpx 0; text-align: center;'>没有任何内容</p>",
+    parserType: "html",
+    parserPadding: 0,
+    html: "",
+    title: "",
+    floor: ""
+  };
+  components = {};
+
+  onLoad(option) {
+    console.log("[参数]", option);
+    this.html = option.html;
+    this.title = option.title;
+    this.floor = "编辑于 "+dateFtt("yyyy-MM-dd",new Date(Number(option.time)));
+  }
+  onShow() {
+    this.getHtml(this.html);
+  }
+  async getHtml(url) {
+    //console.log(api);
+    let html = await api.getDocHTML({
+      query: {
+        url: url
+      }
+    });
+    //console.log("[URL]" + url+"[HTML]",html);
+    this.parserType = "markdown";
+    this.parserContent = html.data;
+    this.htmlParse();
+  }
+  computed = {};
+  methods = {};
+  htmlParse() {
+    /**
+     * WxParse.wxParse(bindName , type, data, target,imagePadding)
+     * 1.bindName绑定的数据名(必填)
+     * 2.type可以为html或者md(必填)
+     * 3.data为传入的具体数据(必填)
+     * 4.target为Page对象,一般为this(必填)
+     * 5.imagePadding为当图片自适应是左右的单一padding(默认为0,可选)
+     */
+    try {
+      console.log("[HTML]", this.parserContent);
+      WxParse.wxParse(
+        this.parserName,
+        this.parserType,
+        this.parserContent,
+        this,
+        this.parserPadding
+      );
+      this.htmlParserTpl = this[this.parserName];
+      this.$apply();
+      //console.log("[节点数据]",this,this.htmlParserTpl);
+    } catch (e) {
+      console.warn("kinerHtmlParser:", "没有任何内容需要转换", e);
+    }
+  }
+  events = {};
+}
+</script>
+<style lang="less">
+@import "../utils/wxParse/wxParse.wxss";
+.content{
+  background: #fefefe;
+}
+.title {
+  top: 0;
+  width: 100%;
+  background: #fefefe;
+  text-align: center;
+  position: fixed;
+  z-index:1001;
+  height: 90rpx;
+  display: block;
+  font-size: 60rpx;
+  border-top: 1rpx solid #dedede;
+  border-bottom: 1rpx solid #dedede;
+  padding-top: 10rpx;
+}
+.doc {
+  border-top: 10rpx solid #dedede;
+  margin-top: 100rpx;
+  display: block;
+  padding: 25rpx;
+}
+.floor{
+  padding-top: 25rpx;
+  padding-right: 15rpx;
+  color: #bebebe;
+  float:right;
+  padding-bottom: 50rpx;
+}
+.wxParse-inline{
+    display: inline;
+    margin: 1rpx;
+    padding: 0;
+    font-size: 40rpx;
+}
+.wxParse-p{
+  padding: 10rpx;
+}
+.wxParse-img {
+  margin: 0 auto;
+  width: 95%;
+  min-height: 200rpx;
+  display: block;
+  background-color: transparent;
+}
+</style>

@@ -1,0 +1,44 @@
+<template>
+  <view class="container">
+    <view class="shop_list">
+      <!--矩阵商品列表模块-->
+      <mainGridList :purchasetype.sync="purchasetype" :list.sync="list"></mainGridList>
+    </view>
+  </view>
+</template>
+<script>
+import wepy from "wepy";
+import api from "@/api/api";
+import MainGridList from "@/components/main_grid_list";
+
+export default class Main extends wepy.page {
+  config = {
+    navigationBarTitleText: "更多功能"
+  };
+  components = {
+    mainGridList:MainGridList
+  };
+  data = {
+    purchasetype:1,
+    list:[]
+  };
+  onLoad() {
+    console.log("[主页]");
+    this.list=[{
+      title:"房屋管理终端",
+      thumLogo:"../images/copy.png",
+      url:"/pages/manager"
+    },{
+      title:"停车缴费",
+      thumLogo:"../images/icon_park_active.png",
+      url:"/pages/park/home"
+    }];
+  }
+  computed = {};
+  methods = {};
+}
+</script>
+<style lang="less">
+@import "../styles/global";
+@import "../styles/common";
+</style>

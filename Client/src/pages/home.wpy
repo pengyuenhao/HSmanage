@@ -1,0 +1,406 @@
+<template>
+  <view class="container">
+    <view class="pos">
+      <view class="search_read_only">
+        <navigator
+          class="search_content"
+          open-type="navigate"
+          url="/pages/search"
+        >
+          <i class="iconfont icon-search"></i>
+          <view class="search_input">搜索</view>
+        </navigator>
+        <navigator
+          class="message"
+          url="/pages/messages"
+        >
+          <i
+            wx:if="{{isCheckMessage}}"
+            class="iconfont icon-message cfff"
+          ></i>
+          <view
+            wx:elif
+            class="doc cfff"
+          >12</view>
+        </navigator>
+      </view>
+      <view class="nav_list">
+        <navigator
+          class="nav_cont"
+          open-type="navigate"
+          url="/pages/manager"
+        >
+          <image
+            src="../images/copy.png"
+            class="nav_icon"
+          >
+            <view class="nav_text">房屋管理</view>
+        </navigator>
+        <navigator
+          class="nav_cont"
+          open-type="navigate"
+          url="/pages/park/home"
+        >
+          <image
+            src="../images/icon_park_active.png"
+            class="nav_icon"
+          >
+            <view class="nav_text">停车缴费</view>
+        </navigator>
+        <navigator
+          open-type="navigate"
+          url="/pages"
+        >
+          <image
+            src="../images/icon_nav_03_new.png"
+            class="nav_icon"
+          >
+            <view class="nav_text">家政服务</view>
+        </navigator>
+        <navigator
+          open-type="navigate"
+          url="/pages"
+        >
+          <image
+            src="../images/icon_nav_04_new.png"
+            class="nav_icon"
+          >
+            <view class="nav_text">设备报修</view>
+        </navigator>
+      </view>
+    </view>
+    <!--发现好商品模块-->
+    <annunciate :list.sync="discoverList"></annunciate>
+    <!--加载更多时动画-->
+    <bottomLoadMore
+      :show.sync="showLoading"
+      message="正在加载"
+    ></bottomLoadMore>
+    <!--暂无数据显示-->
+    <placeholder
+      :show.sync="is_empty"
+      message="暂无发现数据"
+    ></placeholder>
+    <!--弹屏  types:0 图片  1：领红包   show 是否显示  @close 关闭回调  @callback 点击图片回调 或确定回调-->
+    <bombscreen
+      :types.sync="tps"
+      :show.sync="is_show_alert"
+      @close.user="closeAlert"
+      @callback.user="alertCallback"
+    ></bombscreen>
+  </view>
+</template>
+<script>
+import wepy from "wepy";
+import api from "@/api/api";
+import tip from "@/utils/tip";
+import Annunciate from "@/components/annunciate";
+import Bombscreen from "@/components/bomb_screen";
+import BottomLoadMore from "../components/common/bottomLoadMore";
+import Placeholder from "../components/common/placeholder";
+import { USER_SPECICAL_INFO,USER_TOKEN } from "@/utils/constant";
+
+export default class Home extends wepy.page {
+  config = {
+    navigationBarTitleText: "公告",
+    enablePullDownRefresh: true
+  };
+  components = {
+    annunciate: Annunciate,
+    bottomLoadMore: BottomLoadMore,
+    placeholder: Placeholder,
+    bombscreen: Bombscreen
+  };
+  data = {
+    isCheckMessage: false,
+    indicatorDots: true,
+    autoplay: true,
+    interval: 3000,
+    duration: 1000,
+    indicatorActiveColor: "#fff",
+    discoverList: [],
+    //是否有数据
+    is_empty: false,
+    //当前页面
+    currentPage: 1,
+    //总页数
+    page_total: 0,
+    //是否显示 底部loading
+    showLoading: false,
+    //防止重复加载
+    preventRepeatReuqest: false,
+    //广告列表
+    adList: [],
+    tps: 0,
+    is_show_alert: false
+  };
+  //获取数据列表
+  async getDiscoverList(currentPage, size) {
+    let that = this;
+    const json = await api.getHomeDisvocerList({
+      query: {
+        page: currentPage || 1,
+        size: size || 10
+      }
+    });
+    if (json.data.code == 0) {
+      that.discoverList = [...that.discoverList, ...json.data.list];
+
+      if (json.data.page_total) {
+        // 后台的数据不再返回page_total
+        that.page_total = json.data.page_total;
+      }
+      if (json.data.page_total == 0) {
+        //暂无数据
+        that.is_empty = true;
+      }
+      that.$apply();
+    } else {
+      tip.error(json.data.msg);
+    }
+    that.showLoading = false;
+  }
+  async getAdList() {
+    const json = await api.getAdList({
+      query: {}
+    });
+    if (json.data.code == 0) {
+      this.adList = json.data.list;
+      this.$apply();
+    } else {
+    }
+  }
+  async getDocList() {
+    let res = await api.getDocList({
+      query: {
+        limit: 10,
+        offset: 0,
+        creator: "*"
+      }
+    });
+    if (res.statusCode != 404) {
+      let list = res.data;
+      this.discoverList = list;
+      console.log("[列表]", this.discoverList);
+      this.is_empty = false;
+      this.$apply();
+    } else {
+      this.is_empty = true;
+      this.$apply();
+    }
+  }
+  async onLoad() {
+    console.log("[主页面]");
+    //wepy.setStorageSync(USER_TOKEN, "123");
+    let res = await api.updateToken();
+    if (res && res.data && res.data.token) {
+      console.log("[更新Token]", res.data.token);
+      wepy.setStorageSync(USER_TOKEN, res.data.token);
+    }else{
+      console.log("[清除失效Token]",res)
+      wepy.clearStorageSync(USER_TOKEN);
+    }
+    /*     this.discoverList = [
+      {
+        tags: [
+          {
+            style: "normal",
+            value: "停水公告"
+          },
+          {
+            style: "normal",
+            value: "物业通知"
+          }
+        ],
+        view: 1818,
+        title: "小区近期停水通知",
+        doc:
+          "应政府要求进行老旧社区改造，xx日起7日内小区三号楼停止供水，敬请谅解。"
+      },
+      {
+        title:
+          "长标题长文章测试长标题长文章测试长标题长文章测试长标题长文章测试",
+        doc:
+          "长标题长文章测试长标题长文章测试长标题长文章测试长标题长文章测试长标题长文章测试长标题长文章测试长标题长文章测试长标题长文章测试长标题长文章测试长标题长文章测试长标题长文章测试长标题长文章测试长标题长文章测试"
+      },
+      {
+        logo: "../images/bc_qdyl.png"
+      },
+      {
+        title: "标题",
+        logo: "../images/img-02.png",
+        view: 33,
+        tags: [
+          {
+            style: "normal",
+            value: "摄影"
+          }
+        ]
+      },
+      {
+        title: "短标题",
+        doc: "短内容",
+        view: 10,
+        comment: [
+          {
+            name: "123",
+            logo: "../images/img-01.png"
+          }
+        ]
+      }
+    ]; */
+    //this.getDiscoverList();
+    //this.getAdList();
+  }
+  onShow(){
+    this.getDocList();
+  }
+  computed = {};
+  methods = {
+    goToAdvert(url) {
+      console.log("url===" + url);
+      if (url.length == 0) {
+        return;
+      }
+      wepy.navigateTo({
+        url: url
+      });
+    },
+    onShareAppMessage: function(res) {
+      if (res.from === "button") {
+        // 来自页面内转发按钮
+        console.log(res.target);
+      }
+      return {
+        title: "华商物业管理平台",
+        path: "/pages/home",
+        success: function(res) {
+          // 转发成功
+        },
+        fail: function(res) {
+          // 转发失败
+        }
+      };
+    },
+    alertCallback() {
+      tip.alert("跳转");
+    },
+    closeAlert() {
+      // tip.alert('关闭');
+    }
+  };
+  events = {};
+  //下拉刷新
+  onPullDownRefresh() {
+    console.log("下拉刷新列表");
+    this.getDocList();
+    wepy.stopPullDownRefresh();
+  }
+  //上拉刷新
+  onReachBottom() {
+    console.log("上拉刷新列表");
+    let that = this;
+    that.showLoading = true;
+    console.log(that.page_total + "===" + that.currentPage);
+    //判断总页数是否大于翻页数
+    if (that.page_total > that.currentPage) {
+      //防止重复加载
+      if (that.preventRepeatReuqest) {
+        return true;
+      }
+      that.preventRepeatReuqest = true;
+      that.currentPage++;
+      that.getDiscoverList(that.currentPage);
+      that.preventRepeatReuqest = false;
+    } else {
+      that.showLoading = false;
+    }
+  }
+}
+</script>
+<style lang="less">
+.swiper {
+  height: 348rpx;
+}
+
+.slide-image {
+  width: 100%;
+  height: 100%;
+}
+
+.pos {
+  top: 0rpx;
+  z-index: 1000;
+  position: sticky;
+  left: 0;
+  right: 0;
+  background: #fff;
+  .search_read_only {
+    height: 60rpx;
+    width: 100%;
+    //border: rgb(233, 233, 233) solid 3rpx;
+    padding: 5rpx;
+    display: flex;
+    justify-items: flex-start;
+    .search_content {
+      width: 80%;
+      margin-left: 0rpx;
+      background: rgba(0, 0, 0, 0.1);
+      border: 1px solid #efefee;
+      .icon-search,
+      .search_input {
+        color: #7c7b7b;
+      }
+    }
+    .message {
+      display: block;
+      text-align: center;
+      margin-right: 20rpx;
+    }
+    .icon-message {
+      width: 33rpx;
+      color: rgb(66, 66, 66);
+    }
+    .doc {
+      padding: 10rpx;
+      border-radius: 100rpx;
+      background: rgb(255, 0, 0);
+      font-size: 24rpx;
+      white-space: nowrap;
+      display: block;
+      width: 33rpx;
+    }
+  }
+}
+
+.nav_list {
+  color: #404040;
+  display: flex;
+  font-size: 26rpx;
+  justify-content: space-between;
+  border: rgb(233, 233, 233) solid 3rpx;
+  padding: 12rpx 50rpx;
+  .nav_cont {
+    padding: 5rpx;
+    //border: rgb(233, 233, 233) solid 3rpx;
+  }
+  navigator {
+    text-align: center;
+  }
+  .nav_icon {
+    height: 80rpx;
+    margin: 0 auto;
+    width: 80rpx;
+    margin-bottom: 14rpx;
+  }
+  .nav_text {
+    font-size: 26rpx;
+  }
+}
+
+.recommend-title {
+  padding: 40rpx 0;
+  text-align: center;
+  color: #333;
+}
+</style>

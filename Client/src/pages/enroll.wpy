@@ -1,0 +1,296 @@
+<template>
+  <view class="container">
+    <view class="txt flex-c-m">手工输入</view>
+    <view class="manual">
+      <view class="flex-c-m col-3 font-30">
+        <block
+          wx:for="{{numberData}}"
+          wx:for-index="idx"
+          wx:key="idx"
+        >
+          <view
+            class="flex flex-c-m {{indexActive === idx ? 'active' : ''}}"
+            bindtap="tapNo({{idx}})"
+          >
+            {{item}}
+          </view>
+        </block>
+      </view>
+    </view>
+    <view class="txt flex-c-m">扫码录入</view>
+    <view class="shell">
+      <view class="header">
+        <image
+          class="scan flex-c-m"
+          src="../images/scan.png"
+          mode="widthFix"
+          lazy-load="false"
+          bindtap="scan"
+        >
+      </view>
+    </view>
+    <keynumber
+      :isShow.sync="isShowKeyNumber"
+      :keyIndex.sync="indexActive"
+      @closeKeyNumber.user="closeKeyNumber"
+      @submit.user="submit"
+      @deleteNumber.user="deleteNumber"
+    ></keynumber>
+    <navigator
+      class="tomap"
+      url="/pages/map_server"
+    >打开地图搜索</navigator>
+  </view>
+</template>
+<script>
+import wepy from "wepy";
+import api from "@/api/api";
+import KeyNumber from "@/components/park/keyNumber";
+import { SYSTEM_INFO, USER_SPECICAL_INFO, USER_INFO } from "@/utils/constant";
+
+export default class Enroll extends wepy.page {
+  config = {
+    navigationBarTitleText: "注册房屋"
+  };
+  components = { keynumber: KeyNumber };
+  data = {
+    session: null,
+    user: null,
+    numberData: ["", "", "", "", "", "", "", "", "", ""],
+    indexActive: -1,
+    isShowKeyNumber: false
+  };
+  onLoad() {
+    console.log("[用户房屋]");
+    this.user = wepy.getStorageSync(USER_INFO);
+    this.session = wepy.getStorageSync(USER_SPECICAL_INFO);
+  }
+  computed = {};
+  methods = {
+    // 点击牌照输入区域
+    tapNo(index) {
+      this.indexActive = index;
+      //显示按键输入
+      this.isShowKeyNumber = true;
+    },
+    // 点击键盘返回值，填充车牌
+    submit(code) {
+      this.historyActive = -1;
+      this.numberData.splice(this.indexActive, 1, code);
+      if (this.indexActive < 9) {
+        this.indexActive++; // 当前输入框跳到下一个输入框
+      }
+      let merge = "";
+      let isSubmit = true;
+      for (let num of this.numberData) {
+        if (num == "") {
+          isSubmit = false;
+          break;
+        }
+        merge += num;
+      }
+      if (isSubmit) {
+        console.log("[输入数组]", this.numberData);
+        this.getRoomInfo(merge);
+      }
+    },
+    // 删除车牌
+    deleteNumber() {
+      this.numberData.splice(this.indexActive, 1, "");
+      if (this.indexActive > 0) {
+        this.indexActive--;
+      }
+    },
+    // 关闭小键盘
+    closeKeyNumber() {
+      this.close();
+    },
+    async scan() {
+      console.log("[扫码输入]");
+      let res = await wepy
+        .scanCode({
+          onlyFromCamera: false
+        })
+        .catch(err => {
+          console.error("[扫码失败]", err);
+        });
+      console.log("[扫码结果]", res);
+      if (res != null) {
+        let result = String(res.result);
+        for (let i = 0; i < 10; i++) {
+          this.numberData[i] = result[i];
+        }
+        this.$apply();
+        this.getRoomInfo(result);
+      }
+    }
+  };
+  async getRoomInfo(code) {
+    console.log("[获取代码]", code);
+    let res = await api.getRoomInfo({
+      query: {
+        code: code
+      }
+    });
+    if (res) {
+      console.log("[解析结果]", res.data);
+      if (res.data && res.data.length) {
+        if (res.data.length == 1) {
+          let room = res.data[0];
+          wepy.navigateTo({
+            url: "/pages/room_enroll_detail?source=" + JSON.stringify(room)
+          });
+          console.log("[列表值唯一直接跳转详情页面]", room);
+        } else {
+          wepy.navigateTo({
+            url: "/pages/check?source=" + JSON.stringify(res.data)
+          });
+        }
+      } else {
+      }
+    }
+  }
+  close() {
+    this.isShowKeyNumber = false;
+    this.indexActive = -1;
+  }
+}
+</script>
+<style lang="less">
+@import "../styles/global";
+@import "../styles/common";
+.container {
+  height: 100vh;
+  background: #fff;
+  //border: #1acaca solid 10rpx;
+}
+.tomap {
+  position: fixed;
+  font-size: 60rpx;
+  display: flex;
+  height: 125rpx;
+  bottom: 10rpx;
+  //width: 100%;
+  right: 20rpx;
+  left: 20rpx;
+  border-radius: 25rpx;
+  border: #c2c2c2 solid 1rpx;
+  background: rgb(255, 255, 255);
+  text-align: center;
+  align-items: center;
+  justify-content: center;
+}
+.txt {
+  font-size: 75rpx;
+}
+.header {
+  width: 500rpx;
+  height: 500rpx;
+  background: rgb(72, 178, 219);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  .radius(30rpx);
+  .shadow(10rpx, 20rpx, 30rpx, rgba(53, 44, 44, 0.15));
+  .scan {
+    width: 85%;
+  }
+}
+.shell {
+  height: 600rpx;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+.manual {
+  position: relative;
+  z-index: 9;
+  margin: 10rpx 10rpx 10rpx;
+  padding: 10rpx 10rpx 10rpx;
+  background: #fff;
+  .flex-c-m {
+    .height(80);
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    margin: 20rpx 0 20rpx;
+    > view {
+      .height(80%);
+      .width(60%);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin: 2rpx;
+      border: 2rpx solid #1acaca;
+      border-radius: 3px;
+      overflow: hidden;
+      &.active {
+        position: relative;
+        color: #ff4e4e;
+        border: 2rpx solid #ff4e4e;
+        &::after {
+          content: "";
+          display: block;
+          position: absolute;
+          bottom: 0;
+          left: 50%;
+          .translate(-50%, 0);
+          .width(16);
+          .height(2);
+          background: #ff4e4e;
+        }
+      }
+    }
+  }
+  .history-no {
+    text {
+      position: relative;
+      .width(140);
+      .height(60);
+      margin: 0 20rpx 20rpx 0;
+      border: 2rpx solid #eee;
+      background: #eee;
+      &::before {
+        content: "";
+        display: block;
+        position: absolute;
+        top: 0;
+        right: 0;
+        width: 0;
+        height: 0;
+        border-top: 16rpx solid #ff4e4e;
+        border-right: 16rpx solid #ff4e4e;
+        border-left: 16rpx solid transparent;
+        border-bottom: 16rpx solid transparent;
+        opacity: 0;
+        .transition;
+      }
+      &.active {
+        border: 2rpx solid #ff4e4e;
+        color: #ff4e4e;
+        &::before {
+          opacity: 1;
+        }
+        &::after {
+          content: "\e93e";
+          position: absolute;
+          top: 0;
+          right: 6rpx;
+          display: block;
+          width: 16rpx;
+          height: 16rpx;
+          font-size: 24rpx;
+          font-family: "iconfont";
+          line-height: 16rpx;
+          color: #fff;
+        }
+      }
+    }
+  }
+  > button {
+    margin-top: 20rpx;
+    width: 100%;
+    .radius(0);
+  }
+}
+</style>

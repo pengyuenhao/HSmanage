@@ -1,0 +1,206 @@
+<!--绑定手机-->
+<template>
+  <form bindsubmit="formSubmit">
+    <view class="section">
+      <view class="section_title">手机号</view>
+      <input
+        name="phone"
+        type="number"
+        bindinput="phoneInput"
+        placeholder="请输入手机号码"
+        maxlength="11"
+      >
+    </view>
+    <view class="section">
+      <view class="section_title">验证码</view>
+      <input class="code" name="code" type="number" placeholder="请输入验证码">
+      <view class="btn send_code">
+        <text wx:if="{{sendMsgDisabled}}">{{time+'秒后获取'}}</text>
+        <text @tap="sendCode" wx:else="{{sendMsgDisabled}}">获取验证码</text>
+      </view>
+    </view>
+    <view class="btn_comfire">
+      <button class="button type_yellow" formType="submit">登录</button>
+    </view>
+  </form>
+  <authorize 
+    :show.sync="isAuthorize" 
+    @reject.user="authorizeReject"
+    @resolve.user="getUserinfo"
+  ></authorize>
+</template>
+<script>
+import wepy from "wepy";
+import api from "@/api/api";
+import tip from "@/utils/tip";
+import authorize from "@/components/authorize";
+import { USER_SPECICAL_INFO,USER_TOKEN } from "@/utils/constant";
+
+export default class Register extends wepy.page {
+  config = {
+    navigationBarTitleText: "短信登录"
+  };
+  components = {
+    authorize
+  };
+
+  data = {
+    isAuthorize: false,
+    openid:"",
+    phone: "",
+    sendMsgDisabled: false,
+    time: 60
+  };
+  /**请求服务端发送验证码 */
+  async sendVerifyCode(phone) {
+    if(this.openId == null){
+      await this.getUserOpenid();
+    }
+    let res = await api.sendRandCode({
+      query: {
+        //需要验证手机号是否已经注册
+        phone: phone,
+        //需要验证openid是否已经绑定过手机号
+        openid:this.openId
+      }
+    });
+    if (res&&res.data&&res.data.status == "ok") {
+      tip.success("发送成功!");
+      this.$apply();
+    } else {
+      tip.error("发送失败");
+    }
+  }
+  /**获取用户openid */
+  async getUserOpenid() {
+    //尝试获取用户openid数据
+    let userSpecialInfo = wepy.getStorageSync(USER_SPECICAL_INFO) || {};
+    console.log("[用户数据]", userSpecialInfo);
+    if (userSpecialInfo != null && userSpecialInfo.openid != null) {
+      console.log("[获取用户openId]", userSpecialInfo);
+      //使用本地缓存的openid
+      this.openId = userSpecialInfo.openid;
+    } else {
+      this.isAuthorize = true;
+    }
+  }
+  async registerUser(phone, code) {
+    if(this.openId == null){
+      await this.getUserOpenid();
+    }
+    let res = await api.registerUser({
+      query: {
+        phone: phone,
+        openid:this.openId,
+        code: code
+      }
+    });
+    //换取临时Token
+    if (res != null && res.data.token != null) {
+      // that.list = json.data.list;
+      console.log("[绑定成功]",res);
+      wepy.setStorageSync(USER_TOKEN, res.data.token);
+      //this.$apply();
+      //返回上一级
+      wepy.navigateBack();
+    } else {
+      tip.error("验证码错误");
+    }
+    this.showLoading = false;
+  }
+
+  onLoad() {
+    let that = this;
+    this.getUserOpenid();
+  }
+  computed = {};
+  methods = {
+    getUserinfo(e){
+      console.log("[用户同意授权]",e);
+    },
+    authorizeReject() {
+      console.log("[用户拒绝授权]");
+      wepy.navigateBack({
+        delta: 1 //返回的页面数，如果 delta 大于现有页面数，则返回到首页,
+      });
+    },
+    phoneInput(e) {
+      this.phone = e.detail.value;
+    },
+    sendCode(e) {
+      let phone = this.phone;
+      if (!(/^1[3456789]\d{9}$/.test(phone))) {
+        tip.alert("请输入正确的手机号码");
+        console.log("[当前输入]",phone);
+        return false;
+      }
+      this.sendVerifyCode(phone);
+      let that = this;
+      that.sendMsgDisabled = true;
+      let interval = setInterval(() => {
+        if (that.time-- <= 0) {
+          that.time = 10;
+          that.sendMsgDisabled = false;
+          clearInterval(interval);
+          that.$apply();
+        }
+        that.$apply();
+      }, 1000);
+    },
+    formSubmit(e) {
+      let phone = e.detail.value.phone;
+      let code = e.detail.value.code;
+      if (phone == "") {
+        tip.alert("输入手机号码");
+        return false;
+      }
+      if (code == "") {
+        tip.alert("输入验证码");
+        return false;
+      }
+      //注册用户
+      this.registerUser(phone, code);
+      //console.log("form发生了submit事件，携带数据为：", e.detail.value);
+    }
+  };
+}
+</script>
+<style lang="less">
+.section {
+  height: 60rpx;
+  display: flex;
+  align-items: center;
+  padding: 20rpx 30rpx;
+  margin-top: 10rpx;
+  border-bottom: 1px solid #dbdbdb;
+  border-radius: 30rpx;
+  background: #fff;
+  .section_title {
+    color: #1a1a1a;
+    padding-right: 75rpx;
+  }
+  .btn {
+    padding: 15rpx 10rpx;
+    border: 1px solid #000000;
+    -moz-border-radius: 5rpx;
+    /* Firefox */
+    -webkit-border-radius: 5rpx;
+    /* Safari 和 Chrome */
+    border-radius: 5rpx;
+    /* Opera 10.5+, 以及使用了IE-CSS3的IE浏览器 */
+    color: #000000;
+  }
+  .send_code {
+    margin-left: 40rpx;
+  }
+}
+
+.btn_comfire {
+  margin-top: 64rpx;
+  padding: 0 24rpx;
+}
+
+.code {
+  width: 300rpx;
+}
+</style>
