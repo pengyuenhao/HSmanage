@@ -24,11 +24,11 @@ import OSS from 'ali-oss';
 /**Token过期时间，单位为秒，默认设置三个月*/
 const ExpiresIn = 3 * 30 * 24 * 60 * 60;
 /**Token私钥 */
-const TokenSecretOrPrivateKey = "HSKJ_TOKEN_USER";
+const TokenSecretOrPrivateKey = "******";
 /**阿里云用户ID */
-const AccessKeyId = "LTAI4FinKpQjNmb5HnuwFU8v";
+const AccessKeyId = "******";
 /**阿里云用户密钥 */
-const AccessKeySecret = "9hHwMmCHs1kPhPYrftgORfRK6w0iwR";
+const AccessKeySecret = "******";
 
 const AliRegion = "oss-cn-beijing";
 const AliBucket = "base-peng";
