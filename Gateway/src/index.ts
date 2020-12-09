@@ -78,9 +78,9 @@ async function verifySMS(tel: string, openid: string, code?: string) {
 const koa2Req = require('koa2-request')
 const app = new Koa();
 const router = new Router(); // 实例化路由
-const APPID = "wxc19938ca14b8b991";
-const SECRET = "dfd51ab5a3117c72acc10ca992f14f93";
-const KEY = "192006250b4c09247ec02edce69f6a2d";
+const APPID = "******";
+const SECRET = "******";
+const KEY = "******";
 /**密钥Key */
 //const TokenSecretOrPrivateKey = "HSKJ"
 /**异或码 */
